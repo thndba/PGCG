@@ -1,0 +1,13 @@
+﻿SELECT t.table_schema,
+       t.table_name,
+       c.column_name,
+       c.ordinal_position
+  FROM information_schema.tables t
+       JOIN information_schema.columns c
+         ON c.table_schema = t.table_schema
+        AND c.table_name = t.table_name
+ WHERE t.table_type = 'BASE TABLE'
+   AND t.table_schema NOT IN ('pg_catalog', 'information_schema')
+ORDER BY t.table_schema,
+         t.table_name,
+         c.ordinal_position
