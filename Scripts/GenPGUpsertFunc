@@ -1,0 +1,105 @@
+﻿DO $$
+/*
+** =============================================================
+** General
+**    Program Name: GenPGUpsertFunc
+**    Author:       T. Henry Nardo
+**    Date Created: 01/01/2013
+**    Purpose:      Generate a "Upsert" function for Postgres
+**
+** Usage:
+** 
+** Modification History
+**   Date        By   Modification
+**   ----------  ---  ------------
+**   MM/DD/YYYY  XXX  XXX...
+** =============================================================
+*/
+-- Local Variables and Program Data
+DECLARE
+   v_func_name VARCHAR(50);
+   
+-- Main PL/pgSQL Block
+BEGIN -- Begin Main Block
+
+   /*
+   ** =========================================================================
+   ** Section: Create and load temporary tables 
+   ** =========================================================================
+   */
+   -- Drop temp table(s) and sequence(s) if they already exist
+   DROP TABLE IF EXISTS table_info;
+   DROP TABLE IF EXISTS set_cols;
+   DROP TABLE IF EXISTS pk_cols;
+   DROP TABLE IF EXISTS func_def;
+   
+   -- Create a temp table to hold the table meta data
+   CREATE TEMPORARY TABLE IF NOT EXISTS table_info(
+      table_name VARCHAR(100),
+      column_name VARCHAR(100),
+      ordinal_position INTEGER,
+      is_nullable VARCHAR(3)
+   );
+
+   -- Create a temp table for non-PK columns used in a 
+   -- SET statement
+   CREATE TEMPORARY TABLE IF NOT EXISTS set_cols(
+      table_name VARCHAR(100),
+      column_name VARCHAR(100),
+      ordinal_position INTEGER
+   );
+
+   -- Create a temporary table for Primary Key columns
+   CREATE TEMPORARY TABLE IF NOT EXISTS pk_cols(
+      table_name VARCHAR(100),
+      column_name VARCHAR(100),
+      ordinal_position INTEGER
+   );
+
+   -- Create a temporary table to hold the 
+   -- generated function definition
+   CREATE TEMPORARY TABLE IF NOT EXISTS func_def(
+      function_name VARCHAR(100),
+      line_num INTEGER,
+      line_value VARCHAR(100)
+   );
+
+   -- Load temporary table table_info from information_schema
+   INSERT INTO table_info
+      (table_name,
+       column_name, 
+       ordinal_position,
+       is_nullable)
+   SELECT t.table_name,
+          c.column_name,
+          c.ordinal_position,
+          c.is_nullable
+     FROM information_schema.tables t
+          JOIN information_schema.columns c
+            ON c.table_name = t.table_name
+    WHERE t.table_schema = 'public'
+   ORDER BY t.table_name, c.ordinal_position;
+
+END; -- End Main Block
+$$ LANGUAGE plpgsql;
+
+SELECT table_name,
+       column_name,
+       ordinal_position,
+       is_nullable
+  FROM table_info;
+
+-- SELECT table_name,
+--        column_name,
+--        ordinal_position
+--   FROM pk_cols;
+-- 
+-- SELECT table_name,
+--        column_name,
+--        ordinal_position
+--   FROM pk_cols;
+-- 
+-- SELECT line_num,
+--        line_value
+--   FROM func_def
+-- ORDER BY function_name, line_num;
